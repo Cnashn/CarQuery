@@ -1,4 +1,4 @@
-# CarQuery
+# CarQuery (uOttaHack 8)
 
 CarQuery is a chat-based used-car search dashboard that pulls live listings from dealer sites using the Yellowcake API.”
 
