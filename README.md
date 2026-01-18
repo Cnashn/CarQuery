@@ -25,7 +25,7 @@ Requirements: Node 18+ and npm.
 
 ## Notes
 
-- Current sources: cars.ca (stable) and clutch.ca (can be slow/guarded).
+- Current sources: cars.ca (stable) and clutch.ca (can be slow).
 
 ## Tech
 
