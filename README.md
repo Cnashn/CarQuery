@@ -20,7 +20,7 @@ Requirements: Node 18+ and npm.
 ## How it works
 
 - Chat gathers make, model, and color; then asks you to confirm.  
-- Clicking **Search** triggers a single Yellowcake request via the Next.js API route.  
+- Clicking **Search** triggers one Yellowcake request per selected source.  
 - Results are normalized into a table with year, make/model, color, mileage, price, location, source, and a direct link.
 
 ## Notes
