@@ -100,7 +100,7 @@ export function ChatPanel({ messages, searchStatus, readyToSearch, onSend }: Cha
           <div
             className={cn("h-2 w-2 rounded-full", readyToSearch ? "bg-amber-400" : "bg-amber-600 animate-pulse")}
           />
-          <span className="text-xs text-muted-foreground">{readyToSearch ? "Ready to search" : "Listening"}</span>
+          <span className="text-xs text-muted-foreground">{readyToSearch ? "Ready to search" : "Waiting"}</span>
         </div>
 
         {/* Input */}

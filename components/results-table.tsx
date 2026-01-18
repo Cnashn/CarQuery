@@ -126,9 +126,6 @@ export function ResultsTable({ results, searchStatus, readyToSearch }: ResultsTa
                     <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                       <Car className="h-8 w-8 opacity-50" />
                       <p className="text-sm">No results yet.</p>
-                      <p className="text-xs">
-                        {readyToSearch ? "Click Search to find listings." : "Add make/model + city, then hit Search."}
-                      </p>
                     </div>
                   </TableCell>
                 </TableRow>
