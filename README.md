@@ -35,7 +35,10 @@ Requirements: Node 18+ and npm.
 
 ## Preview
 
+**Welcome screen**
+
 ![Welcome screen](public/welcome.png)
 
-![Search screen](public/search.png)
+**Search page**
 
+![Search screen](public/search.png)
