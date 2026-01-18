@@ -9,11 +9,7 @@ export interface CarQuery {
   make: string
   model: string
   city: string
-  yearMin: string
-  yearMax: string
   color?: string
-  maxMileage?: string
-  radiusKm?: string
 }
 
 export interface Message {
@@ -37,34 +33,34 @@ export interface CarListing {
 }
 
 export type SearchStatus = "idle" | "chatting" | "searching"
+type ConfirmStatus = "idle" | "requested" | "confirmed"
 
 const initialQuery: CarQuery = {
   make: "",
   model: "",
   city: "",
-  yearMin: "",
-  yearMax: "",
   color: "",
-  maxMileage: "",
-  radiusKm: "",
 }
 
 export function CarQueryDashboard() {
   const [carQuery, setCarQuery] = useState<CarQuery>(initialQuery)
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle")
+  const [confirmStatus, setConfirmStatus] = useState<ConfirmStatus>("idle")
+  const [selectedSources, setSelectedSources] = useState<string[]>(["cars.ca", "clutch.ca"])
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       role: "assistant",
       content:
-        "Hi! I'm your CarQuery assistant. Tell me what car you're looking for — include the make, model, and city. For example: \"Red Honda Civic in Ottawa\"",
+        "Hi! I'm your CarQuery assistant. Tell me what car you're looking for — include the make, model, and color. For example: \"Gray Audi A5\"",
     },
   ])
   const [results, setResults] = useState<CarListing[]>([])
   const [searchTime, setSearchTime] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const readyToSearch = !!(carQuery.make && carQuery.model && carQuery.city)
+  const hasBasics = !!(carQuery.make && carQuery.model && carQuery.color)
+  const readyToSearch = hasBasics && confirmStatus === "confirmed"
 
   const parseCarQuery = (input: string): Partial<CarQuery> => {
     const parsed: Partial<CarQuery> = {}
@@ -141,7 +137,7 @@ export function CarQueryDashboard() {
       corolla: "Corolla",
       rav4: "RAV4",
       "4runner": "4Runner",
-      "prius": "Prius",
+      Prius: "Prius",
       // BMW
       z4: "Z4",
       z3: "Z3",
@@ -159,6 +155,10 @@ export function CarQueryDashboard() {
       x3: "X3",
       x5: "X5",
       x6: "X6",
+      // Tesla
+      "model 3": "Model 3",
+      "model y": "Model Y",
+      "model x": "Model X",
       // Audi
       a3: "A3",
       a4: "A4",
@@ -185,6 +185,10 @@ export function CarQueryDashboard() {
       gle: "GLE",
       glb: "GLB",
       // Ford
+      focus: "Focus",
+      fiesta: "Fiesta",
+      fusion: "Fusion",
+      escape: "Escape",
       mustang: "Mustang",
       "mustang mach-e": "Mustang Mach-E",
       bronco: "Bronco",
@@ -263,25 +267,11 @@ export function CarQueryDashboard() {
       macan: "Macan",
       cayenne: "Cayenne",
       "911": "911",
+      "718": "718",
     }
     for (const [key, value] of Object.entries(models)) {
       if (lowerInput.includes(key)) {
         parsed.model = value
-        break
-      }
-    }
-
-    // Handle EV special case
-    if (lowerInput.includes("ev") || lowerInput.includes("electric")) {
-      parsed.make = "Tesla"
-      parsed.model = "Model 3"
-    }
-
-    // Parse city
-    const cities = ["ottawa", "toronto", "vancouver", "montreal", "calgary", "edmonton", "winnipeg", "halifax"]
-    for (const city of cities) {
-      if (lowerInput.includes(city)) {
-        parsed.city = city.charAt(0).toUpperCase() + city.slice(1)
         break
       }
     }
@@ -302,17 +292,58 @@ export function CarQueryDashboard() {
 
     // Simulate processing delay
     setTimeout(() => {
-      const parsed = parseCarQuery(input)
-      setCarQuery((prev) => ({ ...prev, ...parsed }))
+      const trimmed = input.trim().toLowerCase()
 
+      // If user starts a new query after confirming, reset confirmation
+      if (confirmStatus === "confirmed" && trimmed !== "y" && trimmed !== "yes") {
+        setConfirmStatus("idle")
+      }
+
+      // Handle confirmation replies
+      if (confirmStatus === "requested" && (trimmed === "y" || trimmed === "yes")) {
+        setConfirmStatus("confirmed")
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 2).toString(),
+            role: "assistant",
+            content: "Confirmed. Click Search when you're ready.",
+          },
+        ])
+        setSearchStatus("idle")
+        return
+      }
+
+      if (confirmStatus === "requested" && (trimmed === "n" || trimmed === "no")) {
+        setConfirmStatus("idle")
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 2).toString(),
+            role: "assistant",
+            content: "No problem. Tell me the make, model, and color again.",
+          },
+        ])
+        setSearchStatus("idle")
+        return
+      }
+
+      const parsed = parseCarQuery(input)
+      const nextQuery = { ...carQuery, ...parsed }
+      setCarQuery(nextQuery)
+
+      const hasAllBasics = !!(nextQuery.make && nextQuery.model && nextQuery.color)
       let responseText = ""
-      if (parsed.make && parsed.model && parsed.city) {
-        responseText = `Got it! I've set up a search for ${parsed.color ? parsed.color + " " : ""}${parsed.make} ${parsed.model} in ${parsed.city}. Click the Search button when you're ready!`
-      } else if (parsed.make || parsed.model || parsed.city) {
+      if (hasAllBasics) {
+        responseText = `Ready to search for ${nextQuery.color} ${nextQuery.make} ${nextQuery.model}${
+          nextQuery.city ? ` in ${nextQuery.city}` : ""
+        }. Confirm? Reply Y or N.`
+        setConfirmStatus("requested")
+      } else if (parsed.make || parsed.model || parsed.city || parsed.color) {
         const missing: string[] = []
         if (!parsed.make && !carQuery.make) missing.push("make")
         if (!parsed.model && !carQuery.model) missing.push("model")
-        if (!parsed.city && !carQuery.city) missing.push("city")
+        if (!parsed.color && !carQuery.color) missing.push("color")
         if (missing.length > 0) {
           responseText = `I've updated your search. Still need: ${missing.join(", ")}. What else can you tell me?`
         } else {
@@ -320,7 +351,7 @@ export function CarQueryDashboard() {
         }
       } else {
         responseText =
-          'I couldn\'t quite understand that. Try something like "Red Honda Civic in Ottawa" or use one of the quick chips below!'
+          'I couldn\'t quite understand that. Try something like "Black Hyundai Accent" or use one of the quick chips below!'
       }
 
       const assistantMessage: Message = {
@@ -328,39 +359,21 @@ export function CarQueryDashboard() {
         role: "assistant",
         content: responseText,
       }
-      setMessages((prev) => [...prev, assistantMessage])
+      setMessages((prev) => {
+        const next = [...prev, assistantMessage]
+
+        return next
+      })
       setSearchStatus("idle")
     }, 800)
   }
 
-  const generateMockResults = (): CarListing[] => {
-    const baseResults: CarListing[] = []
-    const sources: ("cargurus.ca" | "autotrader.ca")[] = ["cargurus.ca", "autotrader.ca"]
-
-    for (let i = 0; i < 8; i++) {
-      const year = carQuery.yearMin
-        ? Number.parseInt(carQuery.yearMin) + Math.floor(Math.random() * 5)
-        : 2019 + Math.floor(Math.random() * 6)
-
-      baseResults.push({
-        id: `listing-${i}`,
-        year,
-        make: carQuery.make,
-        model: carQuery.model,
-        color: carQuery.color || ["Black", "White", "Silver", "Blue", "Red"][Math.floor(Math.random() * 5)],
-        mileage: Math.floor(Math.random() * 120000) + 15000,
-        price: Math.floor(Math.random() * 25000) + 15000,
-        location: carQuery.city,
-        source: sources[i % 2],
-        listingUrl: `https://${sources[i % 2]}/listing/${i}`,
-      })
-    }
-
-    return baseResults.sort((a, b) => a.price - b.price)
-  }
-
   const handleSearch = async () => {
     if (!readyToSearch) return
+    if (selectedSources.length === 0) {
+      setErrorMessage("Select at least one source")
+      return
+    }
 
     setSearchStatus("searching")
     setResults([])
@@ -370,7 +383,7 @@ export function CarQueryDashboard() {
       const response = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(carQuery),
+        body: JSON.stringify({ ...carQuery, sources: selectedSources }),
       })
 
       if (!response.ok) {
@@ -401,6 +414,12 @@ export function CarQueryDashboard() {
             resultsCount={results.length}
             searchTime={searchTime}
             errorMessage={errorMessage || undefined}
+            selectedSources={selectedSources}
+            onToggleSource={(source) =>
+              setSelectedSources((prev) =>
+                prev.includes(source) ? prev.filter((s) => s !== source) : [...prev, source],
+              )
+            }
             onSearch={handleSearch}
           />
           <ResultsTable results={results} searchStatus={searchStatus} readyToSearch={readyToSearch} />

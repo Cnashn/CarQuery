@@ -8,7 +8,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "CarQuery Live",
+  title: "CarQuery",
   description: "Powered by Yellowcake",
   generator: "v0.app",
   icons: {

@@ -70,33 +70,25 @@ function normalizeListing(item: YellowcakeRow, source: string, fallbackUrl: stri
   }
 }
 
-function buildPrompt(make: string, model: string, city: string, color?: string) {
+function buildPrompt(make: string, model: string, _city: string, color?: string) {
+  const target = [color, make, model].filter(Boolean).join(" ")
   return [
-    `Extract up to 10 car listings from this page for ${[color, make, model, city].filter(Boolean).join(" ")}.`,
-    color ? `Only include listings where the color is ${color}. If color is missing or not ${color}, skip the listing.` : "",
-    "For each listing, return: listing_url, title, year (number, if shown), make (if shown), model (if shown), color (if shown), mileage_km (number only, if shown), price_cad (number only, if shown), location (if shown).",
-    "If a field is missing, return null. Return results as a JSON array only.",
+    `Get up to 10 used-car listings for ${target}, preferring the lowest mileage results; return listing_url, title, year, make, model, color, mileage_km, price_cad, and location, using null for any missing fields.`,
   ].join(" ")
 }
 
 function buildTargetUrl(baseUrl: string, query: string[], _color?: string) {
-  const [make, model, city] = query
-  const slug = [make, model]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-
   try {
     const url = new URL(baseUrl)
-    if (slug) {
-      const cleanPath = url.pathname.endsWith("/") ? url.pathname.slice(0, -1) : url.pathname
-      url.pathname = `${cleanPath}/${slug}`
-    }
-    if (city) url.searchParams.set("q", city)
-    url.searchParams.set("sortField", "price")
-    url.searchParams.set("sortDirection", "DESC")
+    return { url: url.toString(), origin: url.origin }
+  } catch {
+    return { url: baseUrl, origin: "" }
+  }
+}
+
+function buildCarsUrl(baseUrl: string, make: string, model: string, city: string) {
+  try {
+    const url = new URL(baseUrl)
     return { url: url.toString(), origin: url.origin }
   } catch {
     return { url: baseUrl, origin: "" }
@@ -110,22 +102,32 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { make, model, city, color } = body as {
+  const { make, model, city, color, sources: requestedSources } = body as {
     make: string
     model: string
     city: string
     color?: string
+    sources?: string[]
   }
 
   const prompt = buildPrompt(make, model, city, color)
   const startedAt = Date.now()
 
-  const sources = [{ name: "clutch.ca", base: process.env.CLUTCH_BASE_URL || "https://clutch.ca/cars" }]
+  const allSources = [
+    { name: "cars.ca", base: process.env.CARS_BASE_URL || "https://www.cars.ca/en/inventory" },
+    { name: "clutch.ca", base: process.env.GOAUTO_BASE_URL || "https://www.clutch.ca/cars" },
+  ]
+  const sources = Array.isArray(requestedSources) && requestedSources.length > 0
+    ? allSources.filter((s) => requestedSources.includes(s.name))
+    : allSources
 
   try {
     const responses = await Promise.all(
       sources.map(async (source) => {
-        const { url, origin } = buildTargetUrl(source.base, [make, model, city], color)
+        const { url, origin } =
+          source.name === "cars.ca"
+            ? buildCarsUrl(source.base, make, model, city)
+            : buildTargetUrl(source.base, [make, model, city])
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 60000) // 60s safety timeout per source
         try {
@@ -172,12 +174,8 @@ export async function POST(request: Request) {
       }, {}),
     )
 
-    const filtered = color
-      ? deduped.filter((item) => item.color && item.color.toLowerCase().includes(color.toLowerCase()))
-      : deduped
-
     const elapsedMs = Date.now() - startedAt
-    return NextResponse.json({ results: filtered, elapsedMs })
+    return NextResponse.json({ results: deduped, elapsedMs })
   } catch (error) {
     if ((error as { name?: string }).name === "AbortError") {
       return NextResponse.json({ error: "Search timed out" }, { status: 504 })

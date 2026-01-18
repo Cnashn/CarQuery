@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
 import { Send, Loader2, Car } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,10 +14,15 @@ interface ChatPanelProps {
   onSend: (message: string) => void
 }
 
-const quickChips = ["Red Honda Civic in Ottawa", "Blue BMW Z4 in Ottawa","Green Ford Mustang in Toronto"]
+const quickChips = ["Red Honda Civic", "Black BMW 4 Series","White Toyota Camry"]
 
 export function ChatPanel({ messages, searchStatus, readyToSearch, onSend }: ChatPanelProps) {
   const [input, setInput] = useState("")
+  const endRef = React.useRef<HTMLDivElement | null>(null)
+
+  React.useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,8 +46,8 @@ export function ChatPanel({ messages, searchStatus, readyToSearch, onSend }: Cha
           <Car className="h-5 w-5 text-amber-400" />
         </div>
         <div>
-          <h1 className="font-semibold text-foreground">CarQuery Chat</h1>
-          <p className="text-xs text-muted-foreground">AI-powered car search</p>
+          <h1 className="font-semibold text-foreground">CarQuery</h1>
+          <p className="text-xs text-muted-foreground">Powered by Yellowcake</p>
         </div>
       </div>
 
@@ -70,6 +73,7 @@ export function ChatPanel({ messages, searchStatus, readyToSearch, onSend }: Cha
             </div>
           </div>
         )}
+        <div ref={endRef} />
       </div>
 
       {/* Quick Chips */}

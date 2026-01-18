@@ -10,9 +10,12 @@ interface SearchSnapshotProps {
   carQuery: CarQuery
   readyToSearch: boolean
   searchStatus: SearchStatus
+  confirmStatus: "idle" | "requested" | "confirmed"
   resultsCount: number
   searchTime: number | null
   errorMessage?: string
+  selectedSources: string[]
+  onToggleSource: (source: string) => void
   onSearch: () => void
 }
 
@@ -20,26 +23,21 @@ export function SearchSnapshot({
   carQuery,
   readyToSearch,
   searchStatus,
+  confirmStatus,
   resultsCount,
   searchTime,
   errorMessage,
+  selectedSources,
+  onToggleSource,
   onSearch,
 }: SearchSnapshotProps) {
   const activeFilters: string[] = []
   if (carQuery.color) activeFilters.push(carQuery.color)
-  if (carQuery.yearMin || carQuery.yearMax) {
-    const yearRange =
-      carQuery.yearMin && carQuery.yearMax
-        ? `${carQuery.yearMin}-${carQuery.yearMax}`
-        : carQuery.yearMin || carQuery.yearMax
-    activeFilters.push(`Year: ${yearRange}`)
-  }
-  if (carQuery.maxMileage) activeFilters.push(`<${carQuery.maxMileage}km`)
-  if (carQuery.radiusKm) activeFilters.push(`${carQuery.radiusKm}km radius`)
 
-  const searchDescription = readyToSearch
-    ? `${carQuery.make} ${carQuery.model} in ${carQuery.city}`
-    : "Add make, model, and city to begin"
+  const searchDescription =
+    carQuery.make && carQuery.model
+      ? `${carQuery.color ? `${carQuery.color} ` : ""}${carQuery.make} ${carQuery.model}`
+      : "Add make, model, and color to begin"
 
   return (
     <Card className="bg-card border-border">
@@ -75,6 +73,29 @@ export function SearchSnapshot({
           </div>
         )}
 
+        {/* Sources */}
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Sources</p>
+          <div className="flex flex-wrap gap-2">
+            {["cars.ca", "clutch.ca"].map((source) => {
+              const active = selectedSources.includes(source)
+              return (
+                <button
+                  key={source}
+                  onClick={() => onToggleSource(source)}
+                  className={`rounded-full px-3 py-1 text-xs border ${
+                    active
+                      ? "bg-amber-400 text-slate-950 border-amber-400"
+                      : "border-border text-muted-foreground hover:border-muted-foreground"
+                  }`}
+                >
+                  {source}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Metrics */}
         <div className="grid grid-cols-3 gap-4 py-3 border-y border-border">
           <div>
@@ -91,6 +112,9 @@ export function SearchSnapshot({
           <div>
             <p className="text-xs text-muted-foreground mb-1">Sources</p>
             <div className="flex flex-wrap gap-1">
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                cars.ca
+              </Badge>
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                 clutch.ca
               </Badge>
@@ -118,7 +142,11 @@ export function SearchSnapshot({
             )}
           </Button>
           {!readyToSearch && (
-            <p className="text-xs text-center text-muted-foreground">Add make/model + city to enable</p>
+            <p className="text-xs text-center text-muted-foreground">
+              {confirmStatus === "requested"
+                ? "Reply Y or N in chat to confirm this search."
+                : "Add make/model + color, then confirm to enable search."}
+            </p>
           )}
           {errorMessage && (
             <p className="text-xs text-center text-amber-400">Search failed: {errorMessage}</p>

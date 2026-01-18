@@ -1,6 +1,7 @@
 "use client"
 
-import { ExternalLink, Loader2, Car } from "lucide-react"
+import { useMemo, useState } from "react"
+import { ExternalLink, Loader2, Car, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -14,6 +15,11 @@ interface ResultsTableProps {
 }
 
 export function ResultsTable({ results, searchStatus, readyToSearch }: ResultsTableProps) {
+  const [sortKey, setSortKey] = useState<
+    "title" | "year" | "color" | "mileage_km" | "price_cad" | "location" | "source"
+  >("price_cad")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-CA", {
       style: "currency",
@@ -25,6 +31,44 @@ export function ResultsTable({ results, searchStatus, readyToSearch }: ResultsTa
   const formatMileage = (mileage: number) => {
     return new Intl.NumberFormat("en-CA").format(mileage) + " km"
   }
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"))
+    } else {
+      setSortKey(key)
+      setSortDir("asc")
+    }
+  }
+
+  const sortedResults = useMemo(() => {
+    const copy = [...results]
+    copy.sort((a, b) => {
+      const aVal = a[sortKey]
+      const bVal = b[sortKey]
+
+      const normalize = (val: unknown) => {
+        if (typeof val === "number") return val
+        if (typeof val === "string") return val.toLowerCase()
+        return null
+      }
+
+      const av = normalize(aVal)
+      const bv = normalize(bVal)
+
+      if (av === bv) return 0
+      if (av == null) return 1
+      if (bv == null) return -1
+
+      if (typeof av === "number" && typeof bv === "number") {
+        return sortDir === "asc" ? av - bv : bv - av
+      }
+
+      const cmp = String(av).localeCompare(String(bv))
+      return sortDir === "asc" ? cmp : -cmp
+    })
+    return copy
+  }, [results, sortKey, sortDir])
 
   return (
     <Card className="bg-card border-border flex-1">
@@ -44,13 +88,26 @@ export function ResultsTable({ results, searchStatus, readyToSearch }: ResultsTa
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead className="text-muted-foreground font-medium">Title</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Year</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Color</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Mileage</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Price</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Location</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Source</TableHead>
+                {[
+                  ["title", "Title"],
+                  ["year", "Year"],
+                  ["color", "Color"],
+                  ["mileage_km", "Mileage"],
+                  ["price_cad", "Price"],
+                  ["location", "Location"],
+                  ["source", "Source"],
+                ].map(([key, label]) => (
+                  <TableHead key={key} className="text-muted-foreground font-medium">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(key as typeof sortKey)}
+                      className="flex items-center gap-1 text-foreground hover:text-amber-400 transition-colors"
+                    >
+                      <span>{label}</span>
+                      <ArrowUpDown className="h-3.5 w-3.5" />
+                    </button>
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -76,7 +133,7 @@ export function ResultsTable({ results, searchStatus, readyToSearch }: ResultsTa
                   </TableCell>
                 </TableRow>
               ) : (
-                results.map((listing) => (
+                sortedResults.map((listing) => (
                   <TableRow key={listing.id} className="hover:bg-muted/30">
                     <TableCell className="text-foreground">
                       {listing.title || [listing.make, listing.model].filter(Boolean).join(" ") || "—"}
@@ -95,9 +152,11 @@ export function ResultsTable({ results, searchStatus, readyToSearch }: ResultsTa
                         variant="ghost"
                         size="sm"
                         className={
-                          listing.source.includes("mycar")
+                          listing.source.includes("cars.ca")
                             ? "h-8 px-3 rounded-full border border-blue-500/40 text-blue-400 hover:bg-blue-500/10"
-                            : "h-8 px-3 rounded-full border border-orange-500/40 text-orange-400 hover:bg-orange-500/10"
+                            : listing.source.includes("clutch")
+                              ? "h-8 px-3 rounded-full border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
+                              : "h-8 px-3 rounded-full border border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
                         }
                         onClick={() => window.open(listing.listing_url, "_blank")}
                       >
