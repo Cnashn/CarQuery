@@ -27,12 +27,6 @@ Requirements: Node 18+ and npm.
 
 - Current sources: cars.ca (stable) and clutch.ca (can be slow).
 
-## Tech
-
-- Next.js (App Router), TypeScript, Tailwind  
-- Next.js API route as proxy to Yellowcake  
-- Local React state for chat/results
-
 ## Preview
 
 **Welcome screen**
