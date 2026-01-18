@@ -52,7 +52,7 @@ export function CarQueryDashboard() {
       id: "1",
       role: "assistant",
       content:
-        "Hi! I'm your CarQuery assistant. Tell me what car you're looking for — include the make, model, and color. For example: \"Gray Audi A5\"",
+        "Hi! I'm your CarQuery assistant. Tell me what car you're looking for, including the make, model, and color. For example: \"Black Audi A5\"",
     },
   ])
   const [results, setResults] = useState<CarListing[]>([])

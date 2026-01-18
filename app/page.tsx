@@ -9,8 +9,7 @@ export default function Home() {
         </div>
         <h1 className="text-4xl font-bold">Welcome to CarQuery</h1>
         <p className="text-lg text-zinc-300">
-          Search used cars and compare prices across multiple sites. Pick your make, model, and color—we&apos;ll fetch
-          the lowest-mileage matches for you.
+          Search used cars and compare prices across multiple sites. Pick your make, model, and color, and you’ll get the lowest-mileage matches.
         </p>
         <a
           href="/search"

@@ -9,6 +9,7 @@ Requirements: Node 18+ and npm.
 1) Clone this repo and `cd` into it.  
 2) Install deps: `npm install`  
 3) Create `.env.local` in the project root:
+
    ```bash
    YELLOWCAKE_API_KEY=your_yellowcake_api_key
    ```
@@ -31,3 +32,10 @@ Requirements: Node 18+ and npm.
 - Next.js (App Router), TypeScript, Tailwind  
 - Next.js API route as proxy to Yellowcake  
 - Local React state for chat/results
+
+## Preview
+
+![Welcome screen](public/welcome.png)
+
+![Search screen](public/search.png)
+
