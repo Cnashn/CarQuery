@@ -1,6 +1,6 @@
 # CarQuery (uOttaHack 8)
 
-CarQuery is a chat-based used-car search dashboard that pulls live listings from dealer sites using the Yellowcake API.
+CarQuery is a chat-based used-car search tool that helps users find low-mileage vehicles by specifying make, model, color, and listing sources. It uses the Yellowcake API to extract real listings and presents results in a clean, sortable table with pricing, mileage, location, and direct links.
 
 ## Quick start (local)
 
